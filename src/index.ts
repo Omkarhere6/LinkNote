@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { ContentModel, LinkModel, UserModel } from "./db";
 import { JWT_PASSWORD } from "./config";
 import { userMiddleware } from "./middleware";
+import { encryptPassword ,comparePassword} from "./encryptionAlgo";
 import cors from "cors";
 
 const app = express();
@@ -11,7 +12,7 @@ app.use(cors());
 
 app.post("/api/v1/signup", async (req, res) => {
     const username = req.body.username;
-    const password = req.body.password;
+    const password = (await encryptPassword(req.body.password)).toString();
 
     try {
         await UserModel.create({
@@ -28,6 +29,21 @@ app.post("/api/v1/signup", async (req, res) => {
         })
     }
 })
+
+
+app.post("/api/v1/login", async (req, res) => {
+    const { username, password } = req.body;
+    const user = await UserModel.findOne({ username });
+    if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+    }
+    const isMatch = await comparePassword(password, String(user.password));
+    if (!isMatch) {
+        return res.status(401).json({ message: "Invalid credentials" });
+    }
+    const token = jwt.sign({ username: user.username }, JWT_PASSWORD, { expiresIn: "1h" });
+    res.json({ message: "Login successful",token });
+});
 
 
 

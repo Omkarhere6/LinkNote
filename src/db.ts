@@ -5,7 +5,7 @@ mongoose.connect("mongodb+srv://admin:rb6VubAY0XyU3EhR@personalprojects.61kr10x.
 
 const UserSchema = new Schema({
     username: {type: String, unique: true},
-    password: String
+    password: {type:String}
 })
 
 const ContentSchema = new Schema({

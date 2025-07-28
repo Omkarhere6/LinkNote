@@ -13,14 +13,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const db_1 = require("./db");
+const config_1 = require("./config");
+const encryptionAlgo_1 = require("./encryptionAlgo");
 const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)());
 app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const username = req.body.username;
-    const password = req.body.password;
+    const password = (yield (0, encryptionAlgo_1.encryptPassword)(req.body.password)).toString();
     try {
         yield db_1.UserModel.create({
             username: username,
@@ -35,5 +38,18 @@ app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, funct
             message: "User already exists"
         });
     }
+}));
+app.post("/api/v1/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { username, password } = req.body;
+    const user = yield db_1.UserModel.findOne({ username });
+    if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+    }
+    const isMatch = yield (0, encryptionAlgo_1.comparePassword)(password, String(user.password));
+    if (!isMatch) {
+        return res.status(401).json({ message: "Invalid credentials" });
+    }
+    const token = jsonwebtoken_1.default.sign({ username: user.username }, config_1.JWT_PASSWORD, { expiresIn: "1h" });
+    res.json({ message: "Login successful", token });
 }));
 app.listen(3000);

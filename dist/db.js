@@ -38,7 +38,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 mongoose_1.default.connect("mongodb+srv://admin:rb6VubAY0XyU3EhR@personalprojects.61kr10x.mongodb.net/NoteLink");
 const UserSchema = new mongoose_1.Schema({
     username: { type: String, unique: true },
-    password: String
+    password: { type: String }
 });
 const ContentSchema = new mongoose_1.Schema({
     title: String,
