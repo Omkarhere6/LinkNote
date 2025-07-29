@@ -79,7 +79,7 @@ app.post("/api/v1/content", (req, res) => __awaiter(void 0, void 0, void 0, func
 }));
 app.get("/api/v1/content", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const userContent = yield db_1.ContentModel.find({ userId: req.body.userId }).populate("userId");
+        const userContent = yield db_1.ContentModel.find({ userId: req.body.userId }).populate("userId username");
         res.status(200).json({
             message: "user Contents",
             contents: userContent
@@ -93,7 +93,7 @@ app.get("/api/v1/content", (req, res) => __awaiter(void 0, void 0, void 0, funct
 }));
 app.delete("/api/v1/content", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield db_1.ContentModel.deleteOne({ _id: req.body.contentId });
+        yield db_1.ContentModel.deleteOne({ _id: req.body.contentId, userId: req.body.userId });
         res.status(200).json({
             message: "Content Deleted",
         });
