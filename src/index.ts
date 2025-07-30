@@ -5,6 +5,7 @@ import { JWT_PASSWORD } from "./config";
 import { userMiddleware } from "./middleware";
 import { encryptPassword ,comparePassword} from "./encryptionAlgo";
 import cors from "cors";
+import {  randomHash } from "./utils";
 
 const app = express();
 app.use(express.json());
@@ -48,6 +49,49 @@ app.post("/api/v1/login", async (req, res) => {
     }
     const token = jwt.sign({ username: user.username ,id:user._id}, JWT_PASSWORD, { expiresIn: "1h" });
     res.json({ message: "Login successful",token });
+});
+
+app.get("/api/v1/brain/:shareLink",async (req,res)=>{
+    try {
+        const hash = req.params.shareLink ;
+        const link = await LinkModel.findOne({
+            hash
+        }).populate("user")
+        if(!link){
+            res.status(411).json({
+                message:"Incorrect link"
+            })
+            return;
+        }
+
+        const content = await ContentModel.find({
+            userId : link.userId
+        })
+
+        const user = await UserModel.findOne({
+            _id : link.userId
+        })
+
+        if(!user){
+            res.status(411).json({
+                message:"Incorrect link"
+            })
+            return;
+        }
+
+        res.status(200).json({
+            content:content,
+            userName:user.username
+        })
+
+
+
+    } catch (error) {
+        res.status(411).json({
+            message:"Something went wrong"
+        })
+    }
+    
 });
 
 app.use(userMiddleware);
@@ -96,6 +140,46 @@ app.delete("/api/v1/content",async (req,res)=>{
         res.status(400).json({
             message: "Something went wrong"
         })
+    }
+});
+
+app.post("/api/v1/brain/share",async (req,res)=>{
+    try {
+        const share = req.body.share;
+        if(share){
+
+            const existingLink = await LinkModel.findOne({
+                userId : req.body.userId
+            })
+
+            if(existingLink){
+                res.status(200).json({
+                    message : "Link generated",
+                    hash : existingLink.hash
+                })
+            }
+
+            const hash = randomHash(15)
+            await LinkModel.create({
+                hash : hash,
+                userId:req.body.userId,
+            })
+            res.status(200).json({
+                message : "Link generated",
+                hash : hash
+            })
+        }else{
+            await LinkModel.deleteOne({
+                userId : req.body.userId
+            })
+            res.status(200).json({
+                message : "Link removed",
+            })
+        }
+
+        
+    } catch (error) {
+        
     }
 });
 
