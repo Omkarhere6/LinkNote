@@ -31,7 +31,7 @@ app.post("/api/v1/signup", async (req, res) => {
 })
 
 
-app.post("/api/v1/login", async (req, res) => {
+app.post("/api/v1/signin", async (req, res) => {
     const { username, password } = req.body;
     const user = await UserModel.findOne({ username });
     if (!user) {

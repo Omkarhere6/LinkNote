@@ -39,7 +39,7 @@ app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, funct
         });
     }
 }));
-app.post("/api/v1/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post("/api/v1/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username, password } = req.body;
     const user = yield db_1.UserModel.findOne({ username });
     if (!user) {
