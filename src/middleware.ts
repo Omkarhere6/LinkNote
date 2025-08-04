@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { JWT_PASSWORD } from "./config";
 
+
 export const userMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const header = req.headers["authorization"];
     const decoded = jwt.verify(header as string, JWT_PASSWORD)
@@ -12,7 +13,7 @@ export const userMiddleware = (req: Request, res: Response, next: NextFunction) 
             })
             return;    
         }
-        req.body.userId = (decoded as JwtPayload).id;
+        req.body ?req.body.userId =  decoded.id : req.body = { userId: decoded.id };
         next()
     } else {
         res.status(403).json({

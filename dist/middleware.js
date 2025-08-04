@@ -16,7 +16,7 @@ const userMiddleware = (req, res, next) => {
             });
             return;
         }
-        req.body.userId = decoded.id;
+        req.body ? req.body.userId = decoded.id : req.body = { userId: decoded.id };
         next();
     }
     else {

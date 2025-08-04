@@ -19,6 +19,7 @@ const config_1 = require("./config");
 const middleware_1 = require("./middleware");
 const encryptionAlgo_1 = require("./encryptionAlgo");
 const cors_1 = __importDefault(require("cors"));
+const utils_1 = require("./utils");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)());
@@ -40,7 +41,7 @@ app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, funct
         });
     }
 }));
-app.post("/api/v1/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post("/api/v1/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username, password } = req.body;
     const user = yield db_1.UserModel.findOne({ username });
     if (!user) {
@@ -57,14 +58,48 @@ app.post("/api/v1/login", (req, res) => __awaiter(void 0, void 0, void 0, functi
     const token = jsonwebtoken_1.default.sign({ username: user.username, id: user._id }, config_1.JWT_PASSWORD, { expiresIn: "1h" });
     res.json({ message: "Login successful", token });
 }));
-app.use(middleware_1.userMiddleware);
-app.post("/api/v1/content", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get("/api/v1/brain/:shareLink", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const hash = req.params.shareLink;
+        const link = yield db_1.LinkModel.findOne({
+            hash
+        }).populate("user");
+        if (!link) {
+            res.status(411).json({
+                message: "Incorrect link"
+            });
+            return;
+        }
+        const content = yield db_1.ContentModel.find({
+            userId: link.userId
+        });
+        const user = yield db_1.UserModel.findOne({
+            _id: link.userId
+        });
+        if (!user) {
+            res.status(411).json({
+                message: "Incorrect link"
+            });
+            return;
+        }
+        res.status(200).json({
+            content: content,
+            userName: user.username
+        });
+    }
+    catch (error) {
+        res.status(411).json({
+            message: "Something went wrong"
+        });
+    }
+}));
+app.post("/api/v1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield db_1.ContentModel.create({
             title: req.body.title,
             link: req.body.link,
-            tags: [],
             type: req.body.type,
+            tags: req.body.tags,
             userId: req.body.userId
         });
         res.status(200).json({
@@ -77,9 +112,9 @@ app.post("/api/v1/content", (req, res) => __awaiter(void 0, void 0, void 0, func
         });
     }
 }));
-app.get("/api/v1/content", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get("/api/v1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const userContent = yield db_1.ContentModel.find({ userId: req.body.userId }).populate("userId username");
+        const userContent = yield db_1.ContentModel.find({ userId: req.body.userId });
         res.status(200).json({
             message: "user Contents",
             contents: userContent
@@ -91,17 +126,53 @@ app.get("/api/v1/content", (req, res) => __awaiter(void 0, void 0, void 0, funct
         });
     }
 }));
-app.delete("/api/v1/content", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.delete("/api/v1/content/:contentId", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield db_1.ContentModel.deleteOne({ _id: req.body.contentId, userId: req.body.userId });
+        yield db_1.ContentModel.deleteOne({ _id: req.params.contentId, userId: req.body.userId });
         res.status(200).json({
             message: "Content Deleted",
         });
     }
     catch (error) {
+        console.log(error);
         res.status(400).json({
             message: "Something went wrong"
         });
+    }
+}));
+app.post("/api/v1/brain/share", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const share = req.body.share;
+        if (share) {
+            const existingLink = yield db_1.LinkModel.findOne({
+                userId: req.body.userId
+            });
+            if (existingLink) {
+                res.status(200).json({
+                    message: "Link generated",
+                    hash: existingLink.hash
+                });
+            }
+            const hash = (0, utils_1.randomHash)(15);
+            yield db_1.LinkModel.create({
+                hash: hash,
+                userId: req.body.userId,
+            });
+            res.status(200).json({
+                message: "Link generated",
+                hash: hash
+            });
+        }
+        else {
+            yield db_1.LinkModel.deleteOne({
+                userId: req.body.userId
+            });
+            res.status(200).json({
+                message: "Link removed",
+            });
+        }
+    }
+    catch (error) {
     }
 }));
 app.listen(3000);

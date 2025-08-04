@@ -1,5 +1,6 @@
 
 import mongoose, {model, Schema} from "mongoose";
+import { ListFormat } from "typescript";
 
 mongoose.connect("")
 
@@ -9,10 +10,10 @@ const UserSchema = new Schema({
 })
 
 const ContentSchema = new Schema({
-    title: String,
-    link: String,
-    tags: [{type: mongoose.Types.ObjectId, ref: 'Tag'}],
-    type: String,
+    title: {type:String},
+    link:{type: String},
+    tags: [{type: String}],
+    type: {type:String},
     userId: {type: mongoose.Types.ObjectId, ref: 'User', required: true },
 })
 

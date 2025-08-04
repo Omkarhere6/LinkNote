@@ -31,7 +31,7 @@ app.post("/api/v1/signup", async (req, res) => {
     }
 })
 
-app.post("/api/v1/login", async (req, res) => {
+app.post("/api/v1/signin", async (req, res) => {
     const { username, password } = req.body;
     const user = await UserModel.findOne({ username });
     if (!user) {
@@ -94,15 +94,15 @@ app.get("/api/v1/brain/:shareLink",async (req,res)=>{
     
 });
 
-app.use(userMiddleware);
 
-app.post("/api/v1/content" ,async (req,res)=>{
+
+app.post("/api/v1/content",userMiddleware ,async (req,res)=>{
     try {
         await ContentModel.create({
             title : req.body.title,
             link : req.body.link,
-            tags:[],
             type:req.body.type,
+            tags:req.body.tags,
             userId : req.body.userId
         })
 
@@ -116,9 +116,9 @@ app.post("/api/v1/content" ,async (req,res)=>{
     }
 });
 
-app.get("/api/v1/content",async (req,res)=>{
+app.get("/api/v1/content",userMiddleware,async (req,res)=>{
     try {
-        const userContent =await ContentModel.find({userId:req.body.userId}).populate("userId username") ;
+        const userContent =await ContentModel.find({userId:req.body.userId}) ;
         res.status(200).json({
             message: "user Contents",
             contents : userContent
@@ -130,20 +130,21 @@ app.get("/api/v1/content",async (req,res)=>{
     }
 });
 
-app.delete("/api/v1/content",async (req,res)=>{
+app.delete("/api/v1/content/:contentId",userMiddleware,async (req,res)=>{
     try {
-        await ContentModel.deleteOne({_id:req.body.contentId,userId : req.body.userId});
+        await ContentModel.deleteOne({_id:req.params.contentId,userId : req.body.userId});
         res.status(200).json({
             message: "Content Deleted",
         })
     } catch (error) {
+        console.log(error)
         res.status(400).json({
             message: "Something went wrong"
         })
     }
 });
 
-app.post("/api/v1/brain/share",async (req,res)=>{
+app.post("/api/v1/brain/share",userMiddleware,async (req,res)=>{
     try {
         const share = req.body.share;
         if(share){
